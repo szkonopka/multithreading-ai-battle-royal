@@ -15,10 +15,10 @@ protected:
     float movement;
     color3 basicColor = {1.0f, 0.0f, 0.0f};
     DIR direction;
-    void moveLeft();
-    void moveRight();
-    void moveDown();
-    void moveUp();
+    virtual void moveLeft();
+    virtual void moveRight();
+    virtual void moveDown();
+    virtual void moveUp();
 public:
     GameObject() { }
     GameObject(float xPosition, float yPosition, float xSize, float ySize)

@@ -5,8 +5,10 @@
 #include "UIBar.h"
 #include "GL/gl.h"
 #include "GL/glut.h"
+#include <thread>
+#include <iostream>
 
-
+bool firstShoot = false;
 color3 goColor = {1.0f, 0.0f, 0.0f};
 Player *go = new Player(0.0f, 0.0f, 100, 100, 0);
 Player *go2 = new Player(0.0f, 0.0f, 100, 100, 1);
@@ -41,32 +43,44 @@ void myInit(void)
 void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT);
+
     go->draw();
     go2->draw();
     teamABar->draw();
     teamBBar->draw();
+
     glFlush();
 }
 
 void requestAnimationFrame()
 {
-    go->move();
-    go2->move();
-    //teamABar->draw();
-    //teamBBar->draw();
-    glutPostRedisplay();
+  if(!firstShoot)
+  {
+      go->shoot();
+      go2->shoot();
+      firstShoot = true;
+  }
+  go->move();
+  go2->move();
+  glutPostRedisplay();
+}
+
+void openGLThread(int argc, char *argv[])
+{
+  glutInit(&argc, argv); // initialize the glut library, allow GLUT to create a seesion with window system
+  glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA); // set display mode to single display buffor and RGB color mode
+  glutInitWindowSize(800, 800);
+  glutCreateWindow("Battle royal"); // create application window with "Battle royal" in label
+  glutIdleFunc(requestAnimationFrame);
+  glutDisplayFunc(renderScene); // set core displaying function
+  glutReshapeFunc(resizeScreen); // set core window resizing function
+  myInit(); // this function will be invoke before rendering, it clears window
+  glutMainLoop(); // run main GLUT library core}
 }
 
 int main(int argc, char *argv[])
 {
-    glutInit(&argc, argv); // initialize the glut library, allow GLUT to create a seesion with window system
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA); // set display mode to single display buffor and RGB color mode
-    glutInitWindowSize(800, 800);
-    glutCreateWindow("Battle royal"); // create application window with "Battle royal" in label
-    glutIdleFunc(requestAnimationFrame);
-    glutDisplayFunc(renderScene); // set core displaying function
-    glutReshapeFunc(resizeScreen); // set core window resizing function
-    myInit(); // this function will be invoke before rendering, it clears window
-    glutMainLoop(); // run main GLUT library core
-    return 0;
+  std::thread mainGL(&openGLThread, argc, argv);
+  mainGL.join();
+  return 0;
 }

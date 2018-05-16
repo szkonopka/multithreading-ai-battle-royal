@@ -14,14 +14,6 @@ void GameObject::draw()
     glColor3fv(basicColor);
 
     // draw rectangle on given positions
-    /*
-    glBegin(GL_POLYGON);
-      glVertex2f(xPosition, yPosition);
-      glVertex2f(xPosition + xSize, yPosition);
-      glVertex2f(xPosition + xSize, yPosition - ySize);
-      glVertex2f(xPosition, yPosition - ySize);
-    glEnd();
-    */
     ShapeBuilder::DrawRectangle2DMiddlePoint(xPosition, yPosition, xSize, ySize);
     glLoadIdentity();
 }
