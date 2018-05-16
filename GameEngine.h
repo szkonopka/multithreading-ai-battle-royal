@@ -1,0 +1,5 @@
+class GameEngine
+{
+private:
+public:
+};

@@ -1,35 +1,77 @@
 #include "GameObject.h"
 #include "GL/gl.h"
 #include "GL/glut.h"
+#include "helpers/ShapeBuilder.h"
 
-void GameObject::draw() 
-{       
+using namespace ShapeBuilder;
+
+void GameObject::draw()
+{
+    // move object by translating current matrix
     glMatrixMode(GL_VIEWPORT);
     glLoadIdentity();
     glTranslatef(this->xPosition, this->yPosition, 0.0f);
-    //glBegin();
     glColor3fv(basicColor);
-    glRectf(-50.0f, 50.0f, 50.0f, -50.0f);
+
+    // draw rectangle on given positions
+    /*
+    glBegin(GL_POLYGON);
+      glVertex2f(xPosition, yPosition);
+      glVertex2f(xPosition + xSize, yPosition);
+      glVertex2f(xPosition + xSize, yPosition - ySize);
+      glVertex2f(xPosition, yPosition - ySize);
     glEnd();
+    */
+    ShapeBuilder::DrawRectangle2DMiddlePoint(xPosition, yPosition, xSize, ySize);
     glLoadIdentity();
 }
 
 void GameObject::moveLeft()
 {
     this->xPosition -= this->movement;
-    if(this->xPosition < -1000)
-        this->xPosition = 1000;
-
-    if(this->xPosition > 1000)
-        this->xPosition = -1000;
+    if(this->xPosition < -500)
+        this->direction = DIR::RIGHT;
 }
 
 void GameObject::moveUp()
 {
     this->yPosition += this->movement;
-    if(this->yPosition < -1000)
-        this->yPosition = 1000;
+    if(this->yPosition > 500)
+        this->direction = DIR::DOWN;
+}
 
-    if(this->yPosition > 1000)
-        this->yPosition = -1000;
+void GameObject::moveDown()
+{
+  this->yPosition -= this->movement;
+  if(this->yPosition < -500)
+      this->direction = DIR::UP;
+}
+
+void GameObject::moveRight()
+{
+  this->xPosition += this->movement;
+  if(this->xPosition > 500)
+      this->direction = DIR::LEFT;
+}
+
+void GameObject::move()
+{
+  switch(direction)
+  {
+      case DIR::RIGHT:
+        this->moveRight();
+        break;
+      case DIR::LEFT:
+        this->moveLeft();
+        break;
+      case DIR::UP:
+        this->moveUp();
+        break;
+      case DIR::DOWN:
+        this->moveDown();
+        break;
+      default:
+        this->moveUp();
+        break;
+  }
 }

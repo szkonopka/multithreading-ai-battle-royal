@@ -1,19 +1,24 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "GameObject.h"
+#include "Player.h"
+#include "UIBar.h"
 #include "GL/gl.h"
 #include "GL/glut.h"
 
+
 color3 goColor = {1.0f, 0.0f, 0.0f};
-GameObject *go = new GameObject(0.0f, 0.0f, 10, 10);
-GameObject *go2 = new GameObject(0.0f, 0.0f, 10, 10);
+Player *go = new Player(0.0f, 0.0f, 100, 100, 0);
+Player *go2 = new Player(0.0f, 0.0f, 100, 100, 1);
+UIBar *teamABar = new UIBar(-1000.0f, 980.0f, 500.0f, 30.0f);
+UIBar *teamBBar = new UIBar(500.0f, 980.0f, 500.0f, 30.0f);
 
 void resizeScreen(GLsizei horizontal, GLsizei vertical)
 {
     GLfloat aspectRatio;
     if(vertical == 0)
         vertical = 1;
-    
+
     glViewport(0, 0, horizontal, vertical);
 
     glMatrixMode(GL_PROJECTION);
@@ -23,7 +28,7 @@ void resizeScreen(GLsizei horizontal, GLsizei vertical)
         glOrtho(-1000.0, 1000.0, -1000.0/aspectRatio, 1000.0/aspectRatio, 1.0, -1.0);
     else
         glOrtho(-1000.0*aspectRatio, 1000.0*aspectRatio, -1000.0, 1000.0, 1.0, -1.0);
-    
+
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -36,22 +41,24 @@ void myInit(void)
 void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT);
-    //glColor3f(0.0f, 1.0f, 0.0f);
-    //glRectf(-1.0f, 1.0f, 1.0f, -1.0f);
     go->draw();
     go2->draw();
+    teamABar->draw();
+    teamBBar->draw();
     glFlush();
 }
 
 void requestAnimationFrame()
 {
-    go->moveLeft();
-    go2->moveUp();
+    go->move();
+    go2->move();
+    //teamABar->draw();
+    //teamBBar->draw();
     glutPostRedisplay();
 }
 
 int main(int argc, char *argv[])
-{   
+{
     glutInit(&argc, argv); // initialize the glut library, allow GLUT to create a seesion with window system
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA); // set display mode to single display buffor and RGB color mode
     glutInitWindowSize(800, 800);
@@ -59,7 +66,7 @@ int main(int argc, char *argv[])
     glutIdleFunc(requestAnimationFrame);
     glutDisplayFunc(renderScene); // set core displaying function
     glutReshapeFunc(resizeScreen); // set core window resizing function
-    myInit(); // this function will be invoke before rendering, it clears window 
+    myInit(); // this function will be invoke before rendering, it clears window
     glutMainLoop(); // run main GLUT library core
     return 0;
 }
