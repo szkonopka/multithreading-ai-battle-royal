@@ -6,7 +6,7 @@ class UIBar : public GameObject
 private:
   float maxProgress = 1.0f;
   float minProgress = 0.0f;
-  float currentProgress = 0.6f;
+  float currentProgress = 1.0f;
   void drawBackground();
   void drawProgress();
 public:
@@ -14,5 +14,6 @@ public:
   float getCurrentProgress() { return this->currentProgress; }
   UIBar(float xPosition, float yPosition, float xSize, float ySize)
   : GameObject(xPosition, yPosition, xSize, ySize) { }
+
   virtual void draw();
 };

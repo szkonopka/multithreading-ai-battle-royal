@@ -5,5 +5,5 @@ namespace ShapeBuilder
 {
   void DrawRectangle2DMiddlePoint(float x, float y, float width, float height);
   void DrawRectangle2DLeftUpperCorner(float x, float y, float width, float height);
-  void DrawCircle2D();
+  void DrawCircle2DMiddlePoint(float x, float y, float width, float height);
 }

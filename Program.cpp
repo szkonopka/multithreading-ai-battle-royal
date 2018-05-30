@@ -43,6 +43,7 @@ void renderScene()
 
 void requestAnimationFrame()
 {
+  ge.Refresh();
   glutPostRedisplay();
 }
 
@@ -50,8 +51,10 @@ void openGLThread(int argc, char *argv[])
 {
   glutInit(&argc, argv); // initialize the glut library, allow GLUT to create a seesion with window system
   glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA); // set display mode to single display buffor and RGB color mode
-  glutInitWindowSize(800, 800);
+  glutInitWindowSize(600, 600);
   glutCreateWindow("Battle royal"); // create application window with "Battle royal" in label
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glutIdleFunc(requestAnimationFrame);
   glutDisplayFunc(renderScene); // set core displaying function
   glutReshapeFunc(resizeScreen); // set core window resizing function

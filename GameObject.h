@@ -43,10 +43,10 @@ public:
     float getYPosition() { return yPosition; }
 
     void setXSize(float x) { xSize = x; }
-    float getXSize() { return xSize; }
+    virtual float getXSize() { return xSize; }
 
     void setYSize(float y) { ySize = y; }
-    float getYSize() { return ySize; }
+    virtual float getYSize() { return ySize; }
 
     virtual void draw();
     virtual void move();
