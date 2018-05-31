@@ -12,7 +12,18 @@ void Player::draw()
     glLoadIdentity();
     glTranslatef(this->xPosition, this->yPosition, 0.0f);
 
-    for(int i = 0; i < firedBullets.size(); i++)
+    if(currentWeapon != nullptr)
+    {
+      glColor4fv(rangeColor);
+      ShapeBuilder::DrawCircle2DMiddlePoint(xPosition, yPosition, xSize + currentWeapon->getRange(), ySize + currentWeapon->getRange());
+    }
+
+    // draw rectangle on given positions
+    //ShapeBuilder::DrawRectangle2DMiddlePoint(xPosition, yPosition, xSize, ySize);
+    glColor3fv(basicColor);
+    ShapeBuilder::DrawCircle2DMiddlePoint(xPosition, yPosition, xSize, ySize);
+
+    /*for(int i = 0; i < firedBullets.size(); i++)
     {
       try
       {
@@ -24,19 +35,12 @@ void Player::draw()
         delete pointer;
         firedBullets.erase(firedBullets.begin() + i);
       }
+    }*/
 
-    }
-
-    if(currentWeapon != nullptr)
+    for(Bullet &bullet : firedBullets)
     {
-      glColor4fv(rangeColor);
-      ShapeBuilder::DrawCircle2DMiddlePoint(xPosition, yPosition, xSize + currentWeapon->getRange(), ySize + currentWeapon->getRange());
+      bullet.draw();
     }
-
-    // draw rectangle on given positions
-    //ShapeBuilder::DrawRectangle2DMiddlePoint(xPosition, yPosition, xSize, ySize);
-    glColor3fv(basicColor);
-    ShapeBuilder::DrawCircle2DMiddlePoint(xPosition, yPosition, xSize, ySize);
 
     glLoadIdentity();
   }
@@ -58,20 +62,21 @@ void Player::initWaypoints()
   }
 }
 
-void Player::shoot()
+void Player::shoot(std::mutex &tt, float destx, float desty)
 {
   if(currentWeapon != nullptr)
   {
-    Bullet *bullet = new Bullet(xPosition, yPosition, 80, 30, direction);
+    tt.lock();
+    Bullet *bullet = new Bullet(xPosition, yPosition, 80, 30, direction, destx, desty);
     firedBullets.push_back(*bullet);
-    bullet->start(*&firedBullets);
+    tt.unlock();
+    //bullet->start(*&firedBullets, xPosition, yPosition, destx, desty);
   }
 }
 
 
 void Player::play()
 {
-
   while(true)
   {
     initWaypoints();
@@ -110,10 +115,9 @@ void Player::play()
       //std::cout << "(" << this->xPosition << "," << this->yPosition << ") heading to (" << waypoints[currentWaypoint].first << "," << waypoints[currentWaypoint].second << ")"<< std::endl;
       //std::cout << "X: " << (waypoints[currentWaypoint].first - this->xSize) << " <= " << this->xPosition << " <= " << (waypoints[currentWaypoint].first + this->xSize) << std::endl;
       //std::cout << "Y: " << (waypoints[currentWaypoint].second - this->xSize) << " <= " << this->yPosition << " <= " << (waypoints[currentWaypoint].second + this->xSize) << std::endl;
-      SLEEP(1);
+      SLEEP(5);
     }
   }
-
 }
 
 void Player::takeWeapon()

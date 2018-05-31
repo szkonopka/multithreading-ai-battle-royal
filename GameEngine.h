@@ -4,10 +4,23 @@
 #include "UIBar.h"
 #include <thread>
 #include <algorithm>
+#include <mutex>
 
 typedef float color3[3];
 
 using namespace Players;
+
+struct GameResources
+{
+  std::mutex sniperA;
+  std::mutex sniperB;
+  std::mutex pistolA;
+  std::mutex pistolB;
+  std::mutex shotgunA;
+  std::mutex shotgunB;
+  std::mutex freeResource;
+  std::mutex tt;
+};
 
 class GameEngine
 {
@@ -18,10 +31,9 @@ private:
   std::vector<Player *> teamB;
   std::vector<Bullet> teamABullets;
   std::vector<Bullet> teamBBullets;
-  Player *go;
-  Player *go2;
   UIBar *teamABar;
   UIBar *teamBBar;
+  GameResources gr;
   float teamASumHP = 0, teamBSumHP = 0, teamATotalHP = 0, teamBTotalHP = 0;
   float matrixWidth;
 public:
@@ -34,7 +46,8 @@ public:
   void CheckForCollisions();
   void CheckBulletsCollision();
   void CheckInWeaponsRange();
-  static void ShootTickRate();
+  void CheckTeamCollision(std::vector<Player *> &firstTeam, std::vector<Player *> &secondTeam);
+  void ShootTickRate();
   void Refresh();
   void Redraw();
   void Run();

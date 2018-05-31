@@ -4,7 +4,29 @@
 void Bullet::draw()
 {
   // move object by translating current matrix
-  move();
+
+  if(xPosition < destX)
+  {
+    this->direction = (DIR) 0;
+  }
+
+  if(xPosition > destX)
+  {
+    this->direction = (DIR) 1;
+  }
+  this->move();
+
+  if(yPosition < destY)
+  {
+    this->direction = (DIR) 2;
+  }
+
+  if(yPosition > destY)
+  {
+    this->direction = (DIR) 3;
+  }
+  this->move();
+
   glMatrixMode(GL_VIEWPORT);
   glLoadIdentity();
   glTranslatef(this->xPosition, this->yPosition, 0.0f);
@@ -16,41 +38,27 @@ void Bullet::draw()
   glLoadIdentity();
 }
 
-void Bullet::start(std::vector<Bullet> &bullets)
+void Bullet::start(std::vector<Bullet> &bullets, float bulletX, float bulletY, float xdest, float ydest)
 {
-  //std::cout << "SHOOOT!" << std::endl;
-  playerBulletsContainer = &bullets;
-  move();
+
 }
 
 void Bullet::moveLeft()
 {
   this->xPosition -= this->movement;
-  if(xPosition < -500.0f)
-  {}
-    //delete this;
 }
 
 void Bullet::moveRight()
 {
   this->xPosition += this->movement;
-  if(xPosition > 500.0f)
-  {}
-    //delete this;
 }
 
 void Bullet::moveUp()
 {
   this->yPosition += this->movement;
-  if(yPosition > 500.0f)
-  {}
-    //delete this;
 }
 
 void Bullet::moveDown()
 {
   this->yPosition -= this->movement;
-  if(yPosition < -500.0f)
-  {}
-    //delete this;
 }

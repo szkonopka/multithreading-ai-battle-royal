@@ -6,7 +6,7 @@
 #include <iostream>
 #include "GameEngine.h"
 
-float matrixWidth = 1000.0f;
+float matrixWidth = 1500.0f;
 GameEngine ge(matrixWidth);
 
 void resizeScreen(GLsizei horizontal, GLsizei vertical)

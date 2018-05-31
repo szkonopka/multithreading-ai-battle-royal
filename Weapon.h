@@ -4,6 +4,7 @@ private:
   int ownerID;
   float range;
   float damage;
+  float bulletSize;
 public:
   Weapon() { }
   Weapon(float _range, float _damage)

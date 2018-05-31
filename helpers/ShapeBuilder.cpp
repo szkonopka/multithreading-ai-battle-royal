@@ -3,7 +3,7 @@
 #define _USE_MATH_DEFINES
 
 namespace ShapeBuilder
-{  
+{
   void DrawRectangle2DMiddlePoint(float x, float y, float width, float height)
   {
     glBegin(GL_POLYGON);
@@ -26,11 +26,33 @@ namespace ShapeBuilder
 
   void DrawCircle2DMiddlePoint(float x, float y, float width, float height)
   {
-    glBegin(GL_POLYGON);
+
+    /*
       for(double i = 0; i < 2 * M_PI; i += M_PI / 6)
       {
         glVertex3f(x + cos(i) * width / 2, y + sin(i) * width / 2, 0);
       }
+    */
+    float theta = 2.0f * M_PI / float(60);
+    float tangential_factor = tanf(theta);
+    float radial_factor = cosf(theta);
+    float cx = width / 2;
+    float cy = 0;
+
+    glBegin(GL_POLYGON);
+    for(int ii = 0; ii < 60; ii++)
+    {
+      glVertex3f(x + cx, y + cy, 0);
+
+      float tx = -cy;
+      float ty = cx;
+
+      cx += tx * tangential_factor;
+      cy += ty * tangential_factor;
+
+      cx *= radial_factor;
+      cy *= radial_factor;
+    }
     glEnd();
   }
 

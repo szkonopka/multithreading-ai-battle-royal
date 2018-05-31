@@ -15,21 +15,27 @@ class Bullet : public GameObject
 {
 private:
   long id;
+  float destX;
+  float destY;
   std::vector<Bullet> *playerBulletsContainer;
 public:
-  Bullet(float xPosition, float yPosition, float xSize, float ySize, int direction)
+  Bullet() { }
+  Bullet(float xPosition, float yPosition, float xSize, float ySize, int direction, float _destX, float _destY)
   : GameObject(xPosition, yPosition, xSize, ySize, direction), id(Bullets::BulletID++)
   {
-    this->movement = 1.0f;
+    this->movement = 0.2f;
+    destX = _destX;
+    destY = _destY;
   }
-  void start(std::vector<Bullet> &bullets);
-  virtual void moveLeft();
-  virtual void moveRight();
-  virtual void moveUp();
-  virtual void moveDown();
+  void start(std::vector<Bullet> &bullets, float bulletX, float bulletY, float destx, float desty);
+  void moveLeft();
+  void moveRight();
+  void moveUp();
+  void moveDown();
   virtual void draw();
   long getId() { return id; }
-
+  float getDestX() { return destX; }
+  float getDestY() { return destY; }
   bool operator==(const Bullet& val) const
   {
     return val.id == id;

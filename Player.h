@@ -7,6 +7,7 @@
 #include <vector>
 #include <random>
 #include "Weapon.h"
+#include <mutex>
 
 #if defined(__unix__)
 # include <unistd.h>
@@ -39,11 +40,9 @@ private:
   void initWaypoints();
 public:
   std::vector<Bullet> firedBullets;
-  Player(int _id, float xPosition, float yPosition, float xSize, float ySize, int direction, float color3[])
-  : GameObject(xPosition, yPosition, xSize, ySize, direction), hp(maxHp)
+  Player(float xPosition, float yPosition, float xSize, float ySize, int direction, float color3[])
+  : GameObject(xPosition, yPosition, xSize, ySize, direction), hp(maxHp), id(Players::PlayerID++)
   {
-
-    id = _id;
     basicColor[0] = color3[0];
     basicColor[1] = color3[1];
     basicColor[2] = color3[2];
@@ -73,9 +72,14 @@ public:
   }
   virtual float getXSize() { return xSize / 4; }
   virtual float getYSize() { return ySize / 4; }
-  void shoot();
+  void shoot(std::mutex &tt, float x, float y);
   void takeWeapon();
   void play();
 
   virtual void draw();
+
+  bool operator==(const Player &val) const
+  {
+    return val.id == id;
+  }
 };

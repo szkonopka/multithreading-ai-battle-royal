@@ -3,6 +3,7 @@ using namespace Players;
 
 void GameEngine::Redraw()
 {
+  gr.freeResource.lock();
   teamABar->draw();
   teamBBar->draw();
 
@@ -13,27 +14,30 @@ void GameEngine::Redraw()
   for(Player *item : teamB) {
     item->draw();
   }
+  gr.freeResource.unlock();
 }
 
 void GameEngine::Refresh()
 {
-  teamATotalHP = 0;
+  gr.freeResource.lock();
   teamASumHP = 0;
   teamBSumHP = 0;
-  teamBTotalHP = 0;
 
-  for(int i = 0; i < teamSize; i++)
+  for(Player *player : teamA)
   {
-    teamATotalHP += teamA[i]->getMaxHp();
-    teamASumHP += teamA[i]->getHp();
-    teamBTotalHP += teamB[i]->getMaxHp();
-    teamBSumHP += teamB[i]->getHp();
+    teamASumHP += player->getHp();
   }
+
+  for(Player *player : teamB)
+  {
+    teamBSumHP += player->getHp();
+  }
+  gr.freeResource.unlock();
 
   teamABar->setCurrentProgress(teamASumHP / teamATotalHP);
   teamBBar->setCurrentProgress(teamBSumHP / teamBTotalHP);
 
-  CheckInWeaponsRange();
+  //CheckInWeaponsRange();
 }
 
 void GameEngine::Run()
@@ -46,27 +50,46 @@ void GameEngine::Run()
   color3 teamAColor = { 1.0f, 0.0f, 0.0f };
   color3 teamBColor = { 0.0f, 0.0f, 1.0f };
   for(int i = 0; i < teamSize; i++) {
-    float yStep = ((-matrixWidth / 2 - 40.0f) + (i * matrixWidth / 2));
-    teamA.push_back(new Player(Players::PlayerID++, -matrixWidth / 2, yStep, 100, 100, 0, teamAColor));
-    teamB.push_back(new Player(Players::PlayerID++, matrixWidth / 2, yStep, 100, 100, 0, teamBColor));
+    //float yStep = ((-matrixWidth / 2 - 40.0f) + (i * matrixWidth / 2));
+    float yStep = ((-matrixWidth / 2) + (i * matrixWidth / 2));
+    teamA.push_back(new Player(-matrixWidth / 2, yStep, 100, 100, 0, teamAColor));
+    teamB.push_back(new Player(matrixWidth / 2, yStep, 100, 100, 0, teamBColor));
+  }
+
+  for(int i = 0; i < teamSize; i++)
+  {
+    teamATotalHP += teamA[i]->getMaxHp();
+    teamBTotalHP += teamB[i]->getMaxHp();
+  }
+
+  for(int i = 0; i < teamSize; i++)
+  {
+    std::cout << "A[" << i << "] X: " << teamA[i]->getXPosition() << ", Y: " << teamA[i]->getYPosition() << std::endl;
+    std::cout << "B[" << i << "] X: " << teamB[i]->getXPosition() << ", Y: " << teamB[i]->getYPosition() << std::endl;
+    //std::cin.get();
   }
 
   teamA[0]->setWeapon(sniper);
-  //teamA[2]->setWeapon(shotgun);
-  teamB[0]->setWeapon(pistol);
+  teamA[1]->setWeapon(pistol);
+  teamA[2]->setWeapon(shotgun);
+  teamB[0]->setWeapon(sniper);
+  teamB[1]->setWeapon(pistol);
+  teamB[2]->setWeapon(shotgun);
 
   std::thread *teamAThreads = new std::thread[teamSize];
   std::thread *teamBThreads = new std::thread[teamSize];
-  std::thread shootTickRate(&ShootTickRate);
+  std::thread shootTickRate(&GameEngine::ShootTickRate, this);
   std::thread checkBulletsCollision(&GameEngine::CheckBulletsCollision, this);
+  //std::thread checkInWeaponsRange(&GameEngine::CheckInWeaponsRange, this);
 
   for(int i = 0; i < teamSize; i++) {
     teamAThreads[i] = std::thread(&Player::play, teamA[i]);
     teamBThreads[i] = std::thread(&Player::play, teamB[i]);
   }
 
-  //checkBulletsCollision.join();
-  //shootTickRate.join();
+  checkBulletsCollision.join();
+  shootTickRate.join();
+  //checkInWeaponsRange.join();
   for(int i = 0; i < teamSize; i++) {
     teamAThreads[i].join();
     teamBThreads[i].join();
@@ -77,15 +100,18 @@ void GameEngine::ShootTickRate()
 {
   while(true)
   {
+    Players::IsShooting = false;
+    SLEEP(1);
     Players::IsShooting = true;
     SLEEP(1);
-    Players::IsShooting = false;
-    SLEEP(1000);
+    CheckInWeaponsRange();
   }
 }
 
 void GameEngine::CheckInWeaponsRange()
 {
+  while(true)
+  {
   for(Player *playerA: teamA)
   {
     float ax = playerA->getXPosition();
@@ -113,7 +139,33 @@ void GameEngine::CheckInWeaponsRange()
           */
           if(Players::IsShooting)
           {
-            playerA->shoot();
+            float destX, destY;
+            if(ax >= bx && ay >= by)
+            {
+              destX = bx - matrixWidth;
+              destY = bx - matrixWidth;
+            }
+
+            if(ax >= bx && ay <= by)
+            {
+              destX = bx - matrixWidth;
+              destY = bx + matrixWidth;
+            }
+
+            if(ax <= bx && ay >= by)
+            {
+              destX = bx + matrixWidth;
+              destY = bx + matrixWidth;
+            }
+
+            if(ax <= bx && ay <= by)
+            {
+              destX = bx + matrixWidth;
+              destY = bx - matrixWidth;
+            }
+
+            playerA->shoot(gr.tt, bx, by);
+            //playerA->shoot(gr.tt, destX, destY);
           }
         }
       }
@@ -124,13 +176,40 @@ void GameEngine::CheckInWeaponsRange()
         {
           if(Players::IsShooting)
           {
-            //playerB->shoot();
+            float destX, destY;
+            if(bx >= ax && by >= ay)
+            {
+              destX = ax - matrixWidth;
+              destY = ax - matrixWidth;
+            }
+
+            if(bx >= ax && by <= ay)
+            {
+              destX = ax - matrixWidth;
+              destY = ax + matrixWidth;
+            }
+
+            if(bx <= ax && by >= ay)
+            {
+              destX = ax + matrixWidth;
+              destY = ax + matrixWidth;
+            }
+
+            if(bx <= ax && by <= ay)
+            {
+              destX = ax + matrixWidth;
+              destY = ax - matrixWidth;
+            }
+
+            playerB->shoot(gr.tt, ax, ay);
+            //playerB->shoot(gr.tt, destX, destY);
           }
         }
       }
     }
   }
-  SLEEP(10);
+  SLEEP(500);
+  }
 }
 
 void GameEngine::CheckBulletsCollision()
@@ -138,6 +217,10 @@ void GameEngine::CheckBulletsCollision()
   std::cout << "Sprawdzam kolizcje pociskow" << std::endl;
   while(true)
   {
+    CheckTeamCollision(teamA, teamB);
+    CheckTeamCollision(teamB, teamA);
+    //CheckTeamCollision(teamB, teamA);
+    /*
     for(Player *playerA : teamA)
     {
       for(Bullet &bullet : playerA->firedBullets)
@@ -155,24 +238,116 @@ void GameEngine::CheckBulletsCollision()
           {
             if((blty <= (by + bw)) && (blty >= (by -bw)))
             {
-              //std::cout << "TRAFIONY!" << std::endl;
-              std::cout << teamBSumHP << " / " << teamBTotalHP << std::endl;
               playerB->setHp(playerB->getHp() - 10.0f);
-              std::cout << playerB->getHp() << std::endl;
-              std::cout << "PASEK: " << teamBSumHP << std::endl;
-              //std::cin.get();
+
               auto it = std::find(playerA->firedBullets.begin(), playerA->firedBullets.end(), bullet);
               if(it != playerA->firedBullets.end()) { playerA->firedBullets.erase(it); }
-              //playerA->firedBullets.erase(std::remove((&playerA->firedBullets).begin(), (&playerA->firedBullets).end(), bullet), &playerA->firedBullets)
 
               if(playerB->getHp() <= 0.0f)
               {
                 playerB->setIsAlive(false);
+                auto itPlayer = std::find(teamB.begin(), teamB.end(), playerB);
+                if(itPlayer != teamB.end()) { teamB.erase(itPlayer); }
               }
             }
           }
         }
+
+        if(bltx < -(matrixWidth / 2) || bltx > (matrixWidth / 2) || blty < -(matrixWidth / 2) || blty > (matrixWidth / 2))
+        {
+          auto it = std::find(playerA->firedBullets.begin(), playerA->firedBullets.end(), bullet);
+          if(it != playerA->firedBullets.end()) { playerA->firedBullets.erase(it); }
+          std::cout << "usuwam bullet" << std::endl;
+        }
       }
     }
+    */
+    /*
+    for(Player *playerB : teamB)
+    {
+      float bltx = bullet.getXPosition();
+      float blty = bullet.getYPosition();
+
+        for(Player *playerB : teamB)
+        {
+          float bx = playerB->getXPosition();
+          float by = playerB->getYPosition();
+          float bw = playerB->getXSize();
+
+          if((bltx <= (bx + bw)) && (bltx >= (bx - bw)))
+          {
+            if((blty <= (by + bw)) && (blty >= (by -bw)))
+            {
+              playerB->setHp(playerB->getHp() - 10.0f);
+
+              auto it = std::find(playerA->firedBullets.begin(), playerA->firedBullets.end(), bullet);
+              if(it != playerA->firedBullets.end()) { playerA->firedBullets.erase(it); }
+
+              if(playerB->getHp() <= 0.0f)
+              {
+                playerB->setIsAlive(false);
+                auto itPlayer = std::find(teamB.begin(), teamB.end(), playerB);
+                if(itPlayer != teamB.end()) { teamB.erase(itPlayer); }
+              }
+            }
+          }
+        }
+
+        if(bltx < -(matrixWidth / 2) || bltx > (matrixWidth / 2) || blty < -(matrixWidth / 2) || blty > (matrixWidth / 2))
+        {
+          auto it = std::find(playerA->firedBullets.begin(), playerA->firedBullets.end(), bullet);
+          if(it != playerA->firedBullets.end()) { playerA->firedBullets.erase(it); }
+          std::cout << "usuwam bullet" << std::endl;
+        }
+      }
+    }
+    */
+  }
+}
+
+void GameEngine::CheckTeamCollision(std::vector<Player *> &firstTeam, std::vector<Player *> &secondTeam)
+{
+  for(Player *playerA : firstTeam)
+  {
+    gr.tt.lock();
+    for(Bullet &bullet : playerA->firedBullets)
+    {
+      float bltx = bullet.getXPosition();
+      float blty = bullet.getYPosition();
+
+      for(Player *playerB : secondTeam)
+      {
+        float bx = playerB->getXPosition();
+        float by = playerB->getYPosition();
+        float bw = playerB->getXSize();
+
+        if((bltx <= (bx + bw)) && (bltx >= (bx - bw)))
+        {
+          if((blty <= (by + bw)) && (blty >= (by -bw)))
+          {
+            playerB->setHp(playerB->getHp() - 10.0f);
+
+            auto it = std::find(playerA->firedBullets.begin(), playerA->firedBullets.end(), bullet);
+            if(it != playerA->firedBullets.end()) { playerA->firedBullets.erase(it); }
+
+            if(playerB->getHp() <= 0.0f)
+            {
+              gr.freeResource.lock();
+              playerB->setIsAlive(false);
+              auto itPlayer = std::find(secondTeam.begin(), secondTeam.end(), playerB);
+              if(itPlayer != secondTeam.end()) { secondTeam.erase(itPlayer); }
+              gr.freeResource.unlock();
+            }
+          }
+        }
+      }
+
+      if(bltx < -(matrixWidth / 2) || bltx > (matrixWidth / 2) || blty < -(matrixWidth / 2) || blty > (matrixWidth / 2))
+      {
+        auto it = std::find(playerA->firedBullets.begin(), playerA->firedBullets.end(), bullet);
+        if(it != playerA->firedBullets.end()) { playerA->firedBullets.erase(it); }
+      }
+    }
+    gr.tt.unlock();
   }
 }

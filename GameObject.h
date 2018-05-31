@@ -27,7 +27,7 @@ public:
       this->yPosition = yPosition;
       this->xSize = xSize;
       this->ySize = ySize;
-      this->movement = 0.05f;
+      this->movement = 0.5f;
     }
 
     GameObject(float xPosition, float yPosition, float xSize, float ySize, int direction)
