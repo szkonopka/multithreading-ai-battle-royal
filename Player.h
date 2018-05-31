@@ -26,9 +26,9 @@ namespace Players {
 class Player : public GameObject
 {
 private:
+  bool isAlive = true;
   int id;
   bool armored = true;
-  std::vector<Bullet> firedBullets;
   std::vector<std::pair<float, float>> waypoints;
   std::vector<bool> visitedWaypoints;
   float range = 100.0f;
@@ -38,6 +38,7 @@ private:
   Weapon *currentWeapon = nullptr;
   void initWaypoints();
 public:
+  std::vector<Bullet> firedBullets;
   Player(int _id, float xPosition, float yPosition, float xSize, float ySize, int direction, float color3[])
   : GameObject(xPosition, yPosition, xSize, ySize, direction), hp(maxHp)
   {
@@ -58,8 +59,9 @@ public:
     currentWeapon = _weapon;
     currentWeapon->setOwnerID(id);
   }
-  void setHp(int _hp) { hp = _hp; }
+  void setHp(int _hp) { hp = _hp < 0 ? 0 : _hp; }
   float getHp() { return hp; }
+  void setIsAlive(bool _isAlive) { isAlive = _isAlive; }
   int getId() { return id; }
   float getMaxHp() { return maxHp; }
   float getRange()

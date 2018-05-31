@@ -17,6 +17,11 @@ void GameEngine::Redraw()
 
 void GameEngine::Refresh()
 {
+  teamATotalHP = 0;
+  teamASumHP = 0;
+  teamBSumHP = 0;
+  teamBTotalHP = 0;
+
   for(int i = 0; i < teamSize; i++)
   {
     teamATotalHP += teamA[i]->getMaxHp();
@@ -53,13 +58,15 @@ void GameEngine::Run()
   std::thread *teamAThreads = new std::thread[teamSize];
   std::thread *teamBThreads = new std::thread[teamSize];
   std::thread shootTickRate(&ShootTickRate);
+  std::thread checkBulletsCollision(&GameEngine::CheckBulletsCollision, this);
 
   for(int i = 0; i < teamSize; i++) {
     teamAThreads[i] = std::thread(&Player::play, teamA[i]);
     teamBThreads[i] = std::thread(&Player::play, teamB[i]);
   }
 
-  shootTickRate.join();
+  //checkBulletsCollision.join();
+  //shootTickRate.join();
   for(int i = 0; i < teamSize; i++) {
     teamAThreads[i].join();
     teamBThreads[i].join();
@@ -73,7 +80,7 @@ void GameEngine::ShootTickRate()
     Players::IsShooting = true;
     SLEEP(1);
     Players::IsShooting = false;
-    SLEEP(500);
+    SLEEP(1000);
   }
 }
 
@@ -105,8 +112,65 @@ void GameEngine::CheckInWeaponsRange()
           std::cin.get();
           */
           if(Players::IsShooting)
+          {
             playerA->shoot();
-          //SLEEP(100);
+          }
+        }
+      }
+
+      if(((bx + br) >= (ax - aw)) && ((bx - br) <= (ax + aw)))
+      {
+        if(((by + br) >= (ay - aw)) && ((by - br) <= (ay + aw)))
+        {
+          if(Players::IsShooting)
+          {
+            //playerB->shoot();
+          }
+        }
+      }
+    }
+  }
+  SLEEP(10);
+}
+
+void GameEngine::CheckBulletsCollision()
+{
+  std::cout << "Sprawdzam kolizcje pociskow" << std::endl;
+  while(true)
+  {
+    for(Player *playerA : teamA)
+    {
+      for(Bullet &bullet : playerA->firedBullets)
+      {
+        float bltx = bullet.getXPosition();
+        float blty = bullet.getYPosition();
+
+        for(Player *playerB : teamB)
+        {
+          float bx = playerB->getXPosition();
+          float by = playerB->getYPosition();
+          float bw = playerB->getXSize();
+
+          if((bltx <= (bx + bw)) && (bltx >= (bx - bw)))
+          {
+            if((blty <= (by + bw)) && (blty >= (by -bw)))
+            {
+              //std::cout << "TRAFIONY!" << std::endl;
+              std::cout << teamBSumHP << " / " << teamBTotalHP << std::endl;
+              playerB->setHp(playerB->getHp() - 10.0f);
+              std::cout << playerB->getHp() << std::endl;
+              std::cout << "PASEK: " << teamBSumHP << std::endl;
+              //std::cin.get();
+              auto it = std::find(playerA->firedBullets.begin(), playerA->firedBullets.end(), bullet);
+              if(it != playerA->firedBullets.end()) { playerA->firedBullets.erase(it); }
+              //playerA->firedBullets.erase(std::remove((&playerA->firedBullets).begin(), (&playerA->firedBullets).end(), bullet), &playerA->firedBullets)
+
+              if(playerB->getHp() <= 0.0f)
+              {
+                playerB->setIsAlive(false);
+              }
+            }
+          }
         }
       }
     }

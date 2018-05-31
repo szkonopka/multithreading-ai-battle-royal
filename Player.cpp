@@ -5,39 +5,41 @@
 
 void Player::draw()
 {
-  // move object by translating current matrix
-  glMatrixMode(GL_VIEWPORT);
-  glLoadIdentity();
-  glTranslatef(this->xPosition, this->yPosition, 0.0f);
-
-  for(int i = 0; i < firedBullets.size(); i++)
+  if(isAlive)
   {
-    try
+    // move object by translating current matrix
+    glMatrixMode(GL_VIEWPORT);
+    glLoadIdentity();
+    glTranslatef(this->xPosition, this->yPosition, 0.0f);
+
+    for(int i = 0; i < firedBullets.size(); i++)
     {
-      firedBullets[i].draw();
+      try
+      {
+        firedBullets[i].draw();
+      }
+      catch(std::exception e)
+      {
+        Bullet *pointer = &firedBullets[i];
+        delete pointer;
+        firedBullets.erase(firedBullets.begin() + i);
+      }
+
     }
-    catch(std::exception e)
+
+    if(currentWeapon != nullptr)
     {
-      Bullet *pointer = &firedBullets[i];
-      delete pointer;
-      firedBullets.erase(firedBullets.begin() + i);
+      glColor4fv(rangeColor);
+      ShapeBuilder::DrawCircle2DMiddlePoint(xPosition, yPosition, xSize + currentWeapon->getRange(), ySize + currentWeapon->getRange());
     }
 
+    // draw rectangle on given positions
+    //ShapeBuilder::DrawRectangle2DMiddlePoint(xPosition, yPosition, xSize, ySize);
+    glColor3fv(basicColor);
+    ShapeBuilder::DrawCircle2DMiddlePoint(xPosition, yPosition, xSize, ySize);
+
+    glLoadIdentity();
   }
-
-  if(currentWeapon != nullptr)
-  {
-    glColor4fv(rangeColor);
-    ShapeBuilder::DrawCircle2DMiddlePoint(xPosition, yPosition, xSize + currentWeapon->getRange(), ySize + currentWeapon->getRange());
-  }
-
-
-  // draw rectangle on given positions
-  //ShapeBuilder::DrawRectangle2DMiddlePoint(xPosition, yPosition, xSize, ySize);
-  glColor3fv(basicColor);
-  ShapeBuilder::DrawCircle2DMiddlePoint(xPosition, yPosition, xSize, ySize);
-
-  glLoadIdentity();
 }
 
 void Player::initWaypoints()
@@ -65,6 +67,7 @@ void Player::shoot()
     bullet->start(*&firedBullets);
   }
 }
+
 
 void Player::play()
 {

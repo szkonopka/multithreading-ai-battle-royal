@@ -11,6 +11,11 @@ void UIBar::drawBackground()
 
 void UIBar::drawProgress()
 {
+  if(currentProgress < 0)
+  {
+    currentProgress = 0;
+  }
+  
   glColor3f(1.0f, 0.0f, 0.0f);
   ShapeBuilder::DrawRectangle2DLeftUpperCorner(xPosition, yPosition, (currentProgress * xSize), ySize);
 }

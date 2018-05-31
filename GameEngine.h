@@ -3,6 +3,7 @@
 #include "Player.h"
 #include "UIBar.h"
 #include <thread>
+#include <algorithm>
 
 typedef float color3[3];
 
@@ -31,6 +32,7 @@ public:
     teamBBar = new UIBar(matrixWidth / 2, matrixWidth- 20.0f, matrixWidth / 2, 30.0f);
   }
   void CheckForCollisions();
+  void CheckBulletsCollision();
   void CheckInWeaponsRange();
   static void ShootTickRate();
   void Refresh();

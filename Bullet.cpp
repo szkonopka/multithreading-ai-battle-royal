@@ -18,7 +18,7 @@ void Bullet::draw()
 
 void Bullet::start(std::vector<Bullet> &bullets)
 {
-  std::cout << "SHOOOT!" << std::endl;
+  //std::cout << "SHOOOT!" << std::endl;
   playerBulletsContainer = &bullets;
   move();
 }
