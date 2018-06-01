@@ -5,21 +5,18 @@
 #include <thread>
 #include <algorithm>
 #include <mutex>
-
+#include "Armory.h"
+#include "helpers/Game.h"
 typedef float color3[3];
 
 using namespace Players;
+using namespace GameState;
 
 struct GameResources
 {
-  std::mutex sniperA;
-  std::mutex sniperB;
-  std::mutex pistolA;
-  std::mutex pistolB;
-  std::mutex shotgunA;
-  std::mutex shotgunB;
-  std::mutex freeResource;
-  std::mutex tt;
+  std::mutex playerResource;
+  std::mutex bulletResource;
+  std::mutex weaponResource;
 };
 
 class GameEngine
@@ -36,16 +33,18 @@ private:
   GameResources gr;
   float teamASumHP = 0, teamBSumHP = 0, teamATotalHP = 0, teamBTotalHP = 0;
   float matrixWidth;
+  bool gameOn = true;
 public:
-  GameEngine(float _matrixWidth)
+  GameEngine(float _matrixWidth) : gameOn(true)
   {
     matrixWidth = _matrixWidth;
-    teamABar = new UIBar(-matrixWidth, matrixWidth - 20.0f, matrixWidth / 2, 30.0f);
-    teamBBar = new UIBar(matrixWidth / 2, matrixWidth- 20.0f, matrixWidth / 2, 30.0f);
+    teamABar = new UIBar(-matrixWidth + 40.0f, matrixWidth - 20.0f, matrixWidth / 2, 30.0f);
+    teamBBar = new UIBar(matrixWidth / 2 - 40.0f, matrixWidth- 20.0f, matrixWidth / 2, 30.0f);
   }
   void CheckForCollisions();
   void CheckBulletsCollision();
   void CheckInWeaponsRange();
+  void ShootInWeaponsRange(float ax, float bx, float ay, float by, Player *&shooter);
   void CheckTeamCollision(std::vector<Player *> &firstTeam, std::vector<Player *> &secondTeam);
   void ShootTickRate();
   void Refresh();

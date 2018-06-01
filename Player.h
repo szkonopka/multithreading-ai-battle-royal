@@ -8,6 +8,8 @@
 #include <random>
 #include "Weapon.h"
 #include <mutex>
+#include "helpers/Game.h"
+#include "Armory.h"
 
 #if defined(__unix__)
 # include <unistd.h>
@@ -18,11 +20,7 @@
 #endif
 
 using namespace ShapeBuilder;
-
-namespace Players {
-  static int PlayerID = 0;
-  static bool IsShooting = false;
-}
+using namespace GameState;
 
 class Player : public GameObject
 {
@@ -37,11 +35,15 @@ private:
   float hp;
   float *rangeColor;
   Weapon *currentWeapon = nullptr;
+  Armory *teamArmory = nullptr;
   void initWaypoints();
+  int currentWeaponBullets = 0;
+  int shootingRound = 0;
+  std::mutex *thisWeaponResource = nullptr;
 public:
   std::vector<Bullet> firedBullets;
-  Player(float xPosition, float yPosition, float xSize, float ySize, int direction, float color3[])
-  : GameObject(xPosition, yPosition, xSize, ySize, direction), hp(maxHp), id(Players::PlayerID++)
+  Player(float xPosition, float yPosition, float xSize, float ySize, int direction, float color3[], Armory *&_teamArmory)
+  : GameObject(xPosition, yPosition, xSize, ySize, direction), hp(maxHp), id(Players::PlayerID++), teamArmory(_teamArmory)
   {
     basicColor[0] = color3[0];
     basicColor[1] = color3[1];
@@ -53,7 +55,7 @@ public:
     rangeColor[3] = 0.1;
   }
 
-  void setWeapon(Weapon *&_weapon)
+  void setWeapon(Weapon *_weapon)
   {
     currentWeapon = _weapon;
     currentWeapon->setOwnerID(id);
@@ -72,8 +74,8 @@ public:
   }
   virtual float getXSize() { return xSize / 4; }
   virtual float getYSize() { return ySize / 4; }
-  void shoot(std::mutex &tt, float x, float y);
-  void takeWeapon();
+  Weapon *&getCurrentWeapon() { return currentWeapon; }
+  void shoot(std::mutex &bulletResource, std::mutex &weaponResource, float x, float y);
   void play();
 
   virtual void draw();

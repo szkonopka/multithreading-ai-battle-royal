@@ -26,13 +26,6 @@ namespace ShapeBuilder
 
   void DrawCircle2DMiddlePoint(float x, float y, float width, float height)
   {
-
-    /*
-      for(double i = 0; i < 2 * M_PI; i += M_PI / 6)
-      {
-        glVertex3f(x + cos(i) * width / 2, y + sin(i) * width / 2, 0);
-      }
-    */
     float theta = 2.0f * M_PI / float(60);
     float tangential_factor = tanf(theta);
     float radial_factor = cosf(theta);

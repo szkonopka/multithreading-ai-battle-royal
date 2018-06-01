@@ -7,7 +7,7 @@ private:
   float maxProgress = 1.0f;
   float minProgress = 0.0f;
   float currentProgress = 1.0f;
-  void drawBackground();
+  void drawBackground(char *teamName, float percentage);
   void drawProgress();
 public:
   void setCurrentProgress(float currentProgress) { this->currentProgress = currentProgress; }
@@ -15,5 +15,5 @@ public:
   UIBar(float xPosition, float yPosition, float xSize, float ySize)
   : GameObject(xPosition, yPosition, xSize, ySize) { }
 
-  virtual void draw();
+  virtual void draw(char *teamName, float percentage);
 };

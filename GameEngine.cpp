@@ -1,25 +1,29 @@
 #include "GameEngine.h"
-using namespace Players;
 
 void GameEngine::Redraw()
 {
-  gr.freeResource.lock();
-  teamABar->draw();
-  teamBBar->draw();
+  gr.playerResource.lock();
+  float percentageA = teamABar->getCurrentProgress();
+  float percentageB = teamBBar->getCurrentProgress();
+  teamABar->draw(Players::TeamAName, percentageA);
+  teamBBar->draw(Players::TeamBName, percentageB);
 
-  for(Player *item : teamA) {
+  for(Player *item : teamA)
+  {
     item->draw();
   }
 
-  for(Player *item : teamB) {
+  for(Player *item : teamB)
+  {
     item->draw();
   }
-  gr.freeResource.unlock();
+
+  gr.playerResource.unlock();
 }
 
 void GameEngine::Refresh()
 {
-  gr.freeResource.lock();
+  gr.playerResource.lock();
   teamASumHP = 0;
   teamBSumHP = 0;
 
@@ -32,28 +36,29 @@ void GameEngine::Refresh()
   {
     teamBSumHP += player->getHp();
   }
-  gr.freeResource.unlock();
+
+  gameOn = (teamASumHP <= 0 || teamBSumHP <= 0) ? false : true;
+  GameState::GameOnPtr = &gameOn;
+  gr.playerResource.unlock();
 
   teamABar->setCurrentProgress(teamASumHP / teamATotalHP);
   teamBBar->setCurrentProgress(teamBSumHP / teamBTotalHP);
-
-  //CheckInWeaponsRange();
 }
 
 void GameEngine::Run()
 {
-  Weapon *sniper = new Weapon(400.0f, 30.0f);
-  Weapon *shotgun = new Weapon(100.0f, 40.0f);
-  Weapon *pistol = new Weapon(175.0f, 35.0f);
-
   Players::PlayerID = 0;
-  color3 teamAColor = { 1.0f, 0.0f, 0.0f };
-  color3 teamBColor = { 0.0f, 0.0f, 1.0f };
-  for(int i = 0; i < teamSize; i++) {
-    //float yStep = ((-matrixWidth / 2 - 40.0f) + (i * matrixWidth / 2));
+  color3 teamAColor = { 0.75f, 0.1f, 0.25f };
+  color3 teamBColor = { 0.15f, 0.3f, 0.75f };
+
+  Armory *teamAArmory = new Armory();
+  Armory *teamBArmory = new Armory();
+
+  for(int i = 0; i < teamSize; i++)
+  {
     float yStep = ((-matrixWidth / 2) + (i * matrixWidth / 2));
-    teamA.push_back(new Player(-matrixWidth / 2, yStep, 100, 100, 0, teamAColor));
-    teamB.push_back(new Player(matrixWidth / 2, yStep, 100, 100, 0, teamBColor));
+    teamA.push_back(new Player(-matrixWidth / 2, yStep, 100, 100, 0, teamAColor, teamAArmory));
+    teamB.push_back(new Player(matrixWidth / 2, yStep, 100, 100, 0, teamBColor, teamBArmory));
   }
 
   for(int i = 0; i < teamSize; i++)
@@ -62,48 +67,52 @@ void GameEngine::Run()
     teamBTotalHP += teamB[i]->getMaxHp();
   }
 
+  std::cout << teamASumHP << std::endl;
+  std::cout << teamBSumHP << std::endl;
+
   for(int i = 0; i < teamSize; i++)
   {
     std::cout << "A[" << i << "] X: " << teamA[i]->getXPosition() << ", Y: " << teamA[i]->getYPosition() << std::endl;
     std::cout << "B[" << i << "] X: " << teamB[i]->getXPosition() << ", Y: " << teamB[i]->getYPosition() << std::endl;
-    //std::cin.get();
   }
 
-  teamA[0]->setWeapon(sniper);
-  teamA[1]->setWeapon(pistol);
-  teamA[2]->setWeapon(shotgun);
-  teamB[0]->setWeapon(sniper);
-  teamB[1]->setWeapon(pistol);
-  teamB[2]->setWeapon(shotgun);
+  teamA[0]->setWeapon(teamAArmory->getSniper());
+  teamA[1]->setWeapon(teamAArmory->getPistol());
+  teamA[2]->setWeapon(teamAArmory->getShotgun());
+  teamB[0]->setWeapon(teamBArmory->getSniper());
+  teamB[1]->setWeapon(teamBArmory->getPistol());
+  teamB[2]->setWeapon(teamBArmory->getShotgun());
+
 
   std::thread *teamAThreads = new std::thread[teamSize];
   std::thread *teamBThreads = new std::thread[teamSize];
   std::thread shootTickRate(&GameEngine::ShootTickRate, this);
   std::thread checkBulletsCollision(&GameEngine::CheckBulletsCollision, this);
-  //std::thread checkInWeaponsRange(&GameEngine::CheckInWeaponsRange, this);
 
-  for(int i = 0; i < teamSize; i++) {
+  for(int i = 0; i < teamSize; i++)
+  {
     teamAThreads[i] = std::thread(&Player::play, teamA[i]);
     teamBThreads[i] = std::thread(&Player::play, teamB[i]);
   }
 
-  checkBulletsCollision.join();
-  shootTickRate.join();
-  //checkInWeaponsRange.join();
-  for(int i = 0; i < teamSize; i++) {
+  for(int i = 0; i < teamSize; i++)
+  {
     teamAThreads[i].join();
     teamBThreads[i].join();
   }
+
+  checkBulletsCollision.join();
+  shootTickRate.join();
 }
 
 void GameEngine::ShootTickRate()
 {
   while(true)
   {
-    Players::IsShooting = false;
-    SLEEP(1);
+    if(!gameOn)
+      break;
+
     Players::IsShooting = true;
-    SLEEP(1);
     CheckInWeaponsRange();
   }
 }
@@ -112,196 +121,101 @@ void GameEngine::CheckInWeaponsRange()
 {
   while(true)
   {
-  for(Player *playerA: teamA)
-  {
-    float ax = playerA->getXPosition();
-    float ay = playerA->getYPosition();
-    float aw = playerA->getXSize();
-    float ar = playerA->getRange();
+    Player *shooter = nullptr;
+    if(!gameOn)
+      break;
 
-    for(Player *playerB : teamB)
+    for(Player *playerA: teamA)
     {
-      float bx = playerB->getXPosition();
-      float by = playerB->getYPosition();
-      float bw = playerB->getXSize();
-      float br = playerB->getRange();
+      float ax = playerA->getXPosition();
+      float ay = playerA->getYPosition();
+      float aw = playerA->getXSize();
+      float ar = playerA->getRange();
 
-      if(((ax + ar) >= (bx - bw)) && ((ax - ar) <= (bx + bw)))
+      for(Player *playerB : teamB)
       {
-        if(((ay + ar) >= (by - bw)) && ((ay - ar) <= (by + bw)))
+        float bx = playerB->getXPosition();
+        float by = playerB->getYPosition();
+        float bw = playerB->getXSize();
+        float br = playerB->getRange();
+
+        if(((ax + ar) >= (bx - bw)) && ((ax - ar) <= (bx + bw)))
         {
-          /*
-          std::cout << "KOLIZJA " <<  playerB->getId() << " ORAZ " << playerA->getId() << std::endl;
-          std::cout << ax + ar << " >= " << bx - bw << " " << ax - ar << " <= " << bx + bw << std::endl;
-          std::cout << "A: ( " << ax << " , " << ay << " ) - range: " << ar << " - width: " << aw << std::endl;
-          std::cout << "B: ( " << bx << " , " << by << " ) - range: " << br << " - width: " << bw <<std::endl;
-          std::cin.get();
-          */
-          if(Players::IsShooting)
+          if(((ay + ar) >= (by - bw)) && ((ay - ar) <= (by + bw)))
           {
-            float destX, destY;
-            if(ax >= bx && ay >= by)
+            if(Players::IsShooting)
             {
-              destX = bx - matrixWidth;
-              destY = bx - matrixWidth;
+              ShootInWeaponsRange(ax, bx, ay, by, playerA);
+              shooter = playerA;
+              //SLEEP(shooter->getCurrentWeapon()->getFrequency());
             }
-
-            if(ax >= bx && ay <= by)
-            {
-              destX = bx - matrixWidth;
-              destY = bx + matrixWidth;
-            }
-
-            if(ax <= bx && ay >= by)
-            {
-              destX = bx + matrixWidth;
-              destY = bx + matrixWidth;
-            }
-
-            if(ax <= bx && ay <= by)
-            {
-              destX = bx + matrixWidth;
-              destY = bx - matrixWidth;
-            }
-
-            playerA->shoot(gr.tt, bx, by);
-            //playerA->shoot(gr.tt, destX, destY);
           }
         }
-      }
 
-      if(((bx + br) >= (ax - aw)) && ((bx - br) <= (ax + aw)))
-      {
-        if(((by + br) >= (ay - aw)) && ((by - br) <= (ay + aw)))
+        if(((bx + br) >= (ax - aw)) && ((bx - br) <= (ax + aw)))
         {
-          if(Players::IsShooting)
+          if(((by + br) >= (ay - aw)) && ((by - br) <= (ay + aw)))
           {
-            float destX, destY;
-            if(bx >= ax && by >= ay)
+            if(Players::IsShooting)
             {
-              destX = ax - matrixWidth;
-              destY = ax - matrixWidth;
+              ShootInWeaponsRange(bx, ax, by, ay, playerB);
+              shooter = playerB;
+              //SLEEP(shooter->getCurrentWeapon()->getFrequency());
             }
-
-            if(bx >= ax && by <= ay)
-            {
-              destX = ax - matrixWidth;
-              destY = ax + matrixWidth;
-            }
-
-            if(bx <= ax && by >= ay)
-            {
-              destX = ax + matrixWidth;
-              destY = ax + matrixWidth;
-            }
-
-            if(bx <= ax && by <= ay)
-            {
-              destX = ax + matrixWidth;
-              destY = ax - matrixWidth;
-            }
-
-            playerB->shoot(gr.tt, ax, ay);
-            //playerB->shoot(gr.tt, destX, destY);
           }
         }
       }
     }
+
+    if(shooter != nullptr)
+    {
+      //gr.weaponResource.lock();
+      SLEEP(shooter->getCurrentWeapon()->getFrequency());
+      //gr.weaponResource.unlock();
+    }
   }
-  SLEEP(500);
+}
+
+void GameEngine::ShootInWeaponsRange(float ax, float bx, float ay, float by, Player *&shooter)
+{
+  float destX, destY;
+  if(ax >= bx && ay >= by)
+  {
+    destX = bx - matrixWidth;
+    destY = bx - matrixWidth;
   }
+
+  if(ax >= bx && ay <= by)
+  {
+    destX = bx - matrixWidth;
+    destY = bx + matrixWidth;
+  }
+
+  if(ax <= bx && ay >= by)
+  {
+    destX = bx + matrixWidth;
+    destY = bx + matrixWidth;
+  }
+
+  if(ax <= bx && ay <= by)
+  {
+    destX = bx + matrixWidth;
+    destY = bx - matrixWidth;
+  }
+
+  if(shooter->getCurrentWeapon()->getArmored())
+    shooter->shoot(gr.bulletResource, gr.weaponResource, bx, by);
+  //shooter->shoot(gr.bulletResource, destX, destY);
 }
 
 void GameEngine::CheckBulletsCollision()
 {
-  std::cout << "Sprawdzam kolizcje pociskow" << std::endl;
   while(true)
   {
+    if(!gameOn)
+      break;
     CheckTeamCollision(teamA, teamB);
     CheckTeamCollision(teamB, teamA);
-    //CheckTeamCollision(teamB, teamA);
-    /*
-    for(Player *playerA : teamA)
-    {
-      for(Bullet &bullet : playerA->firedBullets)
-      {
-        float bltx = bullet.getXPosition();
-        float blty = bullet.getYPosition();
-
-        for(Player *playerB : teamB)
-        {
-          float bx = playerB->getXPosition();
-          float by = playerB->getYPosition();
-          float bw = playerB->getXSize();
-
-          if((bltx <= (bx + bw)) && (bltx >= (bx - bw)))
-          {
-            if((blty <= (by + bw)) && (blty >= (by -bw)))
-            {
-              playerB->setHp(playerB->getHp() - 10.0f);
-
-              auto it = std::find(playerA->firedBullets.begin(), playerA->firedBullets.end(), bullet);
-              if(it != playerA->firedBullets.end()) { playerA->firedBullets.erase(it); }
-
-              if(playerB->getHp() <= 0.0f)
-              {
-                playerB->setIsAlive(false);
-                auto itPlayer = std::find(teamB.begin(), teamB.end(), playerB);
-                if(itPlayer != teamB.end()) { teamB.erase(itPlayer); }
-              }
-            }
-          }
-        }
-
-        if(bltx < -(matrixWidth / 2) || bltx > (matrixWidth / 2) || blty < -(matrixWidth / 2) || blty > (matrixWidth / 2))
-        {
-          auto it = std::find(playerA->firedBullets.begin(), playerA->firedBullets.end(), bullet);
-          if(it != playerA->firedBullets.end()) { playerA->firedBullets.erase(it); }
-          std::cout << "usuwam bullet" << std::endl;
-        }
-      }
-    }
-    */
-    /*
-    for(Player *playerB : teamB)
-    {
-      float bltx = bullet.getXPosition();
-      float blty = bullet.getYPosition();
-
-        for(Player *playerB : teamB)
-        {
-          float bx = playerB->getXPosition();
-          float by = playerB->getYPosition();
-          float bw = playerB->getXSize();
-
-          if((bltx <= (bx + bw)) && (bltx >= (bx - bw)))
-          {
-            if((blty <= (by + bw)) && (blty >= (by -bw)))
-            {
-              playerB->setHp(playerB->getHp() - 10.0f);
-
-              auto it = std::find(playerA->firedBullets.begin(), playerA->firedBullets.end(), bullet);
-              if(it != playerA->firedBullets.end()) { playerA->firedBullets.erase(it); }
-
-              if(playerB->getHp() <= 0.0f)
-              {
-                playerB->setIsAlive(false);
-                auto itPlayer = std::find(teamB.begin(), teamB.end(), playerB);
-                if(itPlayer != teamB.end()) { teamB.erase(itPlayer); }
-              }
-            }
-          }
-        }
-
-        if(bltx < -(matrixWidth / 2) || bltx > (matrixWidth / 2) || blty < -(matrixWidth / 2) || blty > (matrixWidth / 2))
-        {
-          auto it = std::find(playerA->firedBullets.begin(), playerA->firedBullets.end(), bullet);
-          if(it != playerA->firedBullets.end()) { playerA->firedBullets.erase(it); }
-          std::cout << "usuwam bullet" << std::endl;
-        }
-      }
-    }
-    */
   }
 }
 
@@ -309,7 +223,7 @@ void GameEngine::CheckTeamCollision(std::vector<Player *> &firstTeam, std::vecto
 {
   for(Player *playerA : firstTeam)
   {
-    gr.tt.lock();
+    gr.bulletResource.lock();
     for(Bullet &bullet : playerA->firedBullets)
     {
       float bltx = bullet.getXPosition();
@@ -325,19 +239,22 @@ void GameEngine::CheckTeamCollision(std::vector<Player *> &firstTeam, std::vecto
         {
           if((blty <= (by + bw)) && (blty >= (by -bw)))
           {
-            playerB->setHp(playerB->getHp() - 10.0f);
+            gr.weaponResource.lock();
+            if(playerA->getCurrentWeapon()->getArmored())
+              playerB->setHp(playerB->getHp() - playerA->getCurrentWeapon()->getDamage());
 
             auto it = std::find(playerA->firedBullets.begin(), playerA->firedBullets.end(), bullet);
             if(it != playerA->firedBullets.end()) { playerA->firedBullets.erase(it); }
 
             if(playerB->getHp() <= 0.0f)
             {
-              gr.freeResource.lock();
+              gr.playerResource.lock();
               playerB->setIsAlive(false);
               auto itPlayer = std::find(secondTeam.begin(), secondTeam.end(), playerB);
               if(itPlayer != secondTeam.end()) { secondTeam.erase(itPlayer); }
-              gr.freeResource.unlock();
+              gr.playerResource.unlock();
             }
+            gr.weaponResource.unlock();
           }
         }
       }
@@ -348,6 +265,6 @@ void GameEngine::CheckTeamCollision(std::vector<Player *> &firstTeam, std::vecto
         if(it != playerA->firedBullets.end()) { playerA->firedBullets.erase(it); }
       }
     }
-    gr.tt.unlock();
+    gr.bulletResource.unlock();
   }
 }

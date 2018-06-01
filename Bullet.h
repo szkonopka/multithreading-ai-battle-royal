@@ -27,7 +27,6 @@ public:
     destX = _destX;
     destY = _destY;
   }
-  void start(std::vector<Bullet> &bullets, float bulletX, float bulletY, float destx, float desty);
   void moveLeft();
   void moveRight();
   void moveUp();

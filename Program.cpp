@@ -5,9 +5,12 @@
 #include <thread>
 #include <iostream>
 #include "GameEngine.h"
+#include "helpers/Game.h"
+#include <chrono>
 
-float matrixWidth = 1500.0f;
-GameEngine ge(matrixWidth);
+using namespace GameState;
+
+GameEngine ge(GameState::MatrixWidth);
 
 void resizeScreen(GLsizei horizontal, GLsizei vertical)
 {
@@ -21,9 +24,9 @@ void resizeScreen(GLsizei horizontal, GLsizei vertical)
     glLoadIdentity();
     aspectRatio = (GLfloat)horizontal/(GLfloat)vertical;
     if(horizontal <= vertical)
-        glOrtho(-matrixWidth, matrixWidth, -matrixWidth/aspectRatio, matrixWidth/aspectRatio, 1.0, -1.0);
+        glOrtho(-GameState::MatrixWidth, GameState::MatrixWidth, -GameState::MatrixWidth/aspectRatio, GameState::MatrixWidth/aspectRatio, 1.0, -1.0);
     else
-        glOrtho(-matrixWidth*aspectRatio, matrixWidth*aspectRatio, -matrixWidth, matrixWidth, 1.0, -1.0);
+        glOrtho(-GameState::MatrixWidth*aspectRatio, GameState::MatrixWidth*aspectRatio, -GameState::MatrixWidth, GameState::MatrixWidth, 1.0, -1.0);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -31,7 +34,7 @@ void resizeScreen(GLsizei horizontal, GLsizei vertical)
 
 void myInit(void)
 {
-    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+    glClearColor(0.9f, 0.9f, 0.9f, 0.7f);
 }
 
 void renderScene()
@@ -52,7 +55,7 @@ void openGLThread(int argc, char *argv[])
   glutInit(&argc, argv); // initialize the glut library, allow GLUT to create a seesion with window system
   glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA); // set display mode to single display buffor and RGB color mode
   glutInitWindowSize(600, 600);
-  glutCreateWindow("Battle royal"); // create application window with "Battle royal" in label
+  GameState::WindowID = glutCreateWindow("Deathmatch simulation"); // create application window with "Battle royal" in label
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glutIdleFunc(requestAnimationFrame);
@@ -65,8 +68,12 @@ void openGLThread(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
   std::thread mainGL(&openGLThread, argc, argv);
-  ge.Run();
+  std::thread gameEngine(&GameEngine::Run, &ge);
+  gameEngine.join();
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+  mainGL.detach();
+  glutDestroyWindow(GameState::WindowID);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
   mainGL.join();
-
   return 0;
 }
