@@ -38,20 +38,23 @@ void UIBar::drawBackground(char *teamName, float percentage)
   int j = 0, k = 0;
   for(Player *player : players)
   {
-    glRasterPos3f(xPosition, yPosition - (7 + j * 2) * ySize, 0);
-    playerId = std::to_string(player->getId());
-    weaponName = player->getCurrentWeapon()->getName();
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, playerId[0]);
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, ' ');
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, '-');
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, ' ');
-    while(k < weaponName.size())
+    if(player->getIsAlive())
     {
-      glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, weaponName[k]);
-      k++;
+      glRasterPos3f(xPosition, yPosition - (7 + j * 2) * ySize, 0);
+      playerId = std::to_string(player->getId());
+      weaponName = player->getCurrentWeapon()->getName();
+      glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, playerId[0]);
+      glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, ' ');
+      glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, '-');
+      glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, ' ');
+      while(k < weaponName.size())
+      {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, weaponName[k]);
+        k++;
+      }
+      k = 0;
+      j++;
     }
-    k = 0;
-    j++;
   }
 }
 

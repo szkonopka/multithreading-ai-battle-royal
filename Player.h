@@ -66,6 +66,7 @@ public:
   void setHp(int _hp) { hp = _hp < 0 ? 0 : _hp; }
   float getHp() { return hp; }
   void setIsAlive(bool _isAlive) { isAlive = _isAlive; }
+  bool getIsAlive() { return isAlive; }
   int getId() { return id; }
   float getMaxHp() { return maxHp; }
   float getRange()
