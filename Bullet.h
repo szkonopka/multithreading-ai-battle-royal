@@ -23,7 +23,7 @@ public:
   Bullet(float xPosition, float yPosition, float xSize, float ySize, int direction, float _destX, float _destY)
   : GameObject(xPosition, yPosition, xSize, ySize, direction), id(Bullets::BulletID++)
   {
-    this->movement = 0.2f;
+    this->movement = 0.4f;
     destX = _destX;
     destY = _destY;
   }

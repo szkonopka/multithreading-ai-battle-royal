@@ -81,10 +81,8 @@ public:
   void Shoot(std::mutex &bulletResource, std::mutex &weaponResource, float x, float y);
   void Play(std::mutex *weaponResource);
   void InitWeapon(int id);
-  void TryToChangeWeapon();
-
+  void Destroy();
   virtual void draw();
-
   bool operator==(const Player &val) const
   {
     return val.id == id;

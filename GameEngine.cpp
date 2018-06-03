@@ -142,7 +142,6 @@ void GameEngine::CheckInWeaponsRange()
       float ay = playerA->getYPosition();
       float aw = playerA->getXSize();
       float ar = playerA->getRange();
-      playerA->TryToChangeWeapon();
 
       for(Player *playerB : teamB)
       {
@@ -150,7 +149,6 @@ void GameEngine::CheckInWeaponsRange()
         float by = playerB->getYPosition();
         float bw = playerB->getXSize();
         float br = playerB->getRange();
-        playerB->TryToChangeWeapon();
 
         if(((ax + ar) >= (bx - bw)) && ((ax - ar) <= (bx + bw)))
         {
@@ -261,7 +259,7 @@ void GameEngine::CheckTeamCollision(std::vector<Player *> &firstTeam, std::vecto
             if(playerB->getHp() <= 0.0f)
             {
               gr.playerResource.lock();
-              playerB->setIsAlive(false);
+              playerB->Destroy();
               auto itPlayer = std::find(secondTeam.begin(), secondTeam.end(), playerB);
               if(itPlayer != secondTeam.end()) { secondTeam.erase(itPlayer); }
               gr.playerResource.unlock();
