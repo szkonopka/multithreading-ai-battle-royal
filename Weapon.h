@@ -1,5 +1,6 @@
 #pragma once
 #include "GameObject.h"
+#include <string>
 
 class Weapon : public GameObject
 {
@@ -12,10 +13,11 @@ private:
   int capacity;
   float bulletSize;
   bool armored;
+  std::string name;
 public:
-  Weapon() : armored(false) { }
-  Weapon(float _range, float _damage, int _frequency, int _capacity, float _bulletSize, int _id) :
-  range(_range), damage(_damage), frequency(_frequency), capacity(_capacity), bulletSize(_bulletSize), armored(true), id(_id)
+  Weapon() : armored(false), name("none") { }
+  Weapon(float _range, float _damage, int _frequency, int _capacity, float _bulletSize, int _id, std::string _name) :
+  range(_range), damage(_damage), frequency(_frequency), capacity(_capacity), bulletSize(_bulletSize), armored(true), id(_id), name(_name)
   { }
 
   void setId(int _id) { id = _id; }
@@ -41,4 +43,7 @@ public:
 
   void setArmored(bool _armored) { armored = _armored; }
   bool getArmored() { return armored; }
+
+  void setName(std::string _name) { name = _name; }
+  std::string getName() { return name; }
 };

@@ -30,6 +30,29 @@ void UIBar::drawBackground(char *teamName, float percentage)
 
   glColor3f(0.65f, 0.3f, 0.25f);
   ShapeBuilder::DrawRectangle2DLeftUpperCorner(xPosition, yPosition - 4 * ySize, xSize, ySize);
+
+  glRasterPos3f(xPosition, yPosition - (7) * ySize, 0);
+  i = 0;
+  std::string playerId;
+  std::string weaponName;
+  int j = 0, k = 0;
+  for(Player *player : players)
+  {
+    glRasterPos3f(xPosition, yPosition - (7 + j * 2) * ySize, 0);
+    playerId = std::to_string(player->getId());
+    weaponName = player->getCurrentWeapon()->getName();
+    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, playerId[0]);
+    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, ' ');
+    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, '-');
+    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, ' ');
+    while(k < weaponName.size())
+    {
+      glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, weaponName[k]);
+      k++;
+    }
+    k = 0;
+    j++;
+  }
 }
 
 void UIBar::drawProgress()

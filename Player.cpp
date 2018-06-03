@@ -12,8 +12,6 @@ void Player::draw()
     glLoadIdentity();
     glTranslatef(this->xPosition, this->yPosition, 0.0f);
 
-
-
     if(currentWeapon->getArmored())
     {
       glColor4fv(rangeColor);
@@ -23,6 +21,16 @@ void Player::draw()
     // draw rectangle on given positions
     glColor3fv(basicColor);
     ShapeBuilder::DrawCircle2DMiddlePoint(xPosition, yPosition, xSize, ySize);
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glRasterPos3f(xPosition - xSize / 5, yPosition - ySize / 5, 0);
+    std::string number = std::to_string(id);
+    int i = 0;
+    while(number[i] != '\0')
+    {
+      glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, number[i]);
+      i++;
+    }
 
     for(Bullet &bullet : firedBullets)
     {
@@ -48,6 +56,7 @@ void Player::initWaypoints()
 
   waypoints.clear();
   visitedWaypoints.clear();
+
   int waypointsAmount = std::rand() % 5 + 5;
   for(int i = 0; i < waypointsAmount; i++)
   {
@@ -56,41 +65,43 @@ void Player::initWaypoints()
   }
 }
 
-void Player::shoot(std::mutex &bulletResource, std::mutex &weaponResource, float destx, float desty)
+void Player::InitWeapon(int id)
 {
-  teamArmory->getResources()[currentWeapon->getId()]->lock();
-  weaponResource.lock();
-  if(currentWeaponBullets > currentWeapon->getCapacity())
+  if(!currentWeapon->getArmored())
   {
-    teamArmory->getResources()[(currentWeapon->getId() + 1) % 3]->lock();
-    currentWeapon = teamArmory->getWeapons()[(currentWeapon->getId() + 1) % 3];
-    teamArmory->getResources()[(currentWeapon->getId() + 1) % 3]->unlock();
-    //shootingRound++;
-    currentWeaponBullets = 0;
-
+    teamArmory->getResources()[id]->lock();
+    teamArmory->setWeaponState(id, true);
+    currentWeapon = teamArmory->getWeapons()[id];
+    currentWeaponId = id;
   }
+}
 
+void Player::Shoot(std::mutex &bulletResource, std::mutex &weaponResource, float destx, float desty)
+{
+  weaponResource.lock();
   if(currentWeapon->getArmored())
   {
+    currentWeaponBullets++;
+    std::cout << id << " wystrzelil: " << currentWeaponBullets << std::endl;
     bulletResource.lock();
     Bullet *bullet = new Bullet(xPosition, yPosition, 80, 30, direction, destx, desty);
     firedBullets.push_back(*bullet);
-    currentWeaponBullets++;
     bulletResource.unlock();
   }
   weaponResource.unlock();
-  teamArmory->getResources()[currentWeapon->getId()]->unlock();
 }
 
 
-void Player::play()
+void Player::Play(std::mutex *weaponResource)
 {
   while(true)
   {
     if(!isAlive || !*GameState::GameOnPtr)
       break;
+
     initWaypoints();
     int currentWaypoint = 0;
+
     while(currentWaypoint < waypoints.size()) {
       if(waypoints[currentWaypoint].first > this->xPosition)
       {
@@ -121,7 +132,40 @@ void Player::play()
       {
         currentWaypoint++;
       }
+
       SLEEP(5);
+
+      weaponResource->lock();
+      if(currentWeapon->getArmored() == false)
+      {
+        teamArmory->getResources()[currentWeaponId]->unlock();
+        if(teamArmory->getResources()[(currentWeaponId + 1) % 3]->try_lock())
+        {
+          std::cout << id << " zmiana broni!" << std::endl;
+          teamArmory->setWeaponState(((currentWeaponId + 1) % 3), true);
+          currentWeapon = teamArmory->getWeapons()[(currentWeaponId + 1) % 3];
+          currentWeaponId = currentWeapon->getId();
+        }
+
+        /*
+        if(teamArmory->getWeaponState((currentWeaponId + 1) % 3) == false)
+        {
+          std::cout << id << " zmiana broni!" << std::endl;
+          teamArmory->setWeaponState(((currentWeaponId + 1) % 3), true);
+          currentWeapon = teamArmory->getWeapons()[(currentWeaponId + 1) % 3];
+          currentWeaponId = currentWeapon->getId();
+        }
+        */
+      }
+
+      if(currentWeaponBullets >= currentWeapon->getCapacity() && currentWeapon->getArmored())
+      {
+        currentWeaponBullets = 0;
+        teamArmory->setWeaponState(currentWeaponId, false);
+        teamArmory->getResources()[currentWeaponId]->unlock();
+        currentWeapon = noWeapon;
+      }
+      weaponResource->unlock();
     }
   }
 }

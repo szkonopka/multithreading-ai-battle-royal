@@ -40,6 +40,8 @@ private:
   int currentWeaponBullets = 0;
   int shootingRound = 0;
   std::mutex *thisWeaponResource = nullptr;
+  Weapon *noWeapon;
+  int currentWeaponId;
 public:
   std::vector<Bullet> firedBullets;
   Player(float xPosition, float yPosition, float xSize, float ySize, int direction, float color3[], Armory *&_teamArmory)
@@ -53,6 +55,7 @@ public:
     rangeColor[1] = color3[1];
     rangeColor[2] = color3[2];
     rangeColor[3] = 0.1;
+    noWeapon = new Weapon();
   }
 
   void setWeapon(Weapon *_weapon)
@@ -75,8 +78,10 @@ public:
   virtual float getXSize() { return xSize / 4; }
   virtual float getYSize() { return ySize / 4; }
   Weapon *&getCurrentWeapon() { return currentWeapon; }
-  void shoot(std::mutex &bulletResource, std::mutex &weaponResource, float x, float y);
-  void play();
+  void Shoot(std::mutex &bulletResource, std::mutex &weaponResource, float x, float y);
+  void Play(std::mutex *weaponResource);
+  void InitWeapon(int id);
+  void TryToChangeWeapon();
 
   virtual void draw();
 
