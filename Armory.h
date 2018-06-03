@@ -19,9 +19,9 @@ private:
 public:
   Armory()
   {
-    sniper = new Weapon(700.0f, 5.0f, 1000, 3, 1, weaponId++, "sniper");
-    shotgun = new Weapon(180.0f, 8.0f, 800, 4, 1, weaponId++, "shotgun");
-    pistol = new Weapon(300.0f, 3.0f, 300, 6, 1, weaponId++, "pistol");
+    sniper = new Weapon(700.0f, 11.0f, 1000, 3, 1, weaponId++, "sniper");
+    shotgun = new Weapon(180.0f, 15.0f, 800, 4, 1, weaponId++, "shotgun");
+    pistol = new Weapon(300.0f, 8.0f, 300, 6, 1, weaponId++, "pistol");
 
     weapons = { *&sniper, *&shotgun, *&pistol };
     resources = { &sniperRes, &shotgunRes, &pistolRes };

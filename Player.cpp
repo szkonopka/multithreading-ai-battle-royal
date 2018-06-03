@@ -81,12 +81,15 @@ void Player::Shoot(std::mutex &bulletResource, std::mutex &weaponResource, float
   weaponResource.lock();
   if(currentWeapon->getArmored())
   {
-    currentWeaponBullets++;
-    std::cout << id << " wystrzelil: " << currentWeaponBullets << std::endl;
-    bulletResource.lock();
-    Bullet *bullet = new Bullet(xPosition, yPosition, 80, 30, direction, destx, desty);
-    firedBullets.push_back(*bullet);
-    bulletResource.unlock();
+    if(currentWeaponBullets < currentWeapon->getCapacity())
+    {
+      currentWeaponBullets++;
+      std::cout << id << " wystrzelil: " << currentWeaponBullets << std::endl;
+      bulletResource.lock();
+      Bullet *bullet = new Bullet(xPosition, yPosition, 80, 30, direction, destx, desty);
+      firedBullets.push_back(*bullet);
+      bulletResource.unlock();
+    }
   }
   weaponResource.unlock();
 }
@@ -135,10 +138,18 @@ void Player::Play(std::mutex *weaponResource)
 
       SLEEP(5);
 
-      weaponResource->lock();
+      if(weaponResource->try_lock());
+      if(currentWeaponBullets >= currentWeapon->getCapacity() && currentWeapon->getArmored())
+      {
+        teamArmory->setWeaponState(currentWeaponId, false);
+        teamArmory->getResources()[currentWeaponId]->unlock();
+        currentWeapon = noWeapon;
+        currentWeaponBullets = 0;
+      }
+
       if(currentWeapon->getArmored() == false)
       {
-        teamArmory->getResources()[currentWeaponId]->unlock();
+        //teamArmory->getResources()[currentWeaponId]->unlock();
         if(teamArmory->getResources()[(currentWeaponId + 1) % 3]->try_lock())
         {
           std::cout << id << " zmiana broni!" << std::endl;
@@ -158,14 +169,14 @@ void Player::Play(std::mutex *weaponResource)
         */
       }
 
-      if(currentWeaponBullets >= currentWeapon->getCapacity() && currentWeapon->getArmored())
-      {
-        currentWeaponBullets = 0;
-        teamArmory->setWeaponState(currentWeaponId, false);
-        teamArmory->getResources()[currentWeaponId]->unlock();
-        currentWeapon = noWeapon;
-      }
       weaponResource->unlock();
     }
   }
+}
+
+void Player::Destroy()
+{
+  teamArmory->setWeaponState(currentWeaponId, false);
+  teamArmory->getResources()[currentWeaponId]->unlock();
+  isAlive = false;
 }
