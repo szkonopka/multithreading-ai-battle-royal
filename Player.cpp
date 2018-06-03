@@ -138,13 +138,15 @@ void Player::Play(std::mutex *weaponResource)
 
       SLEEP(5);
 
-      if(weaponResource->try_lock());
-      if(currentWeaponBullets >= currentWeapon->getCapacity() && currentWeapon->getArmored())
+      if(weaponResource->try_lock())
       {
-        teamArmory->setWeaponState(currentWeaponId, false);
-        teamArmory->getResources()[currentWeaponId]->unlock();
-        currentWeapon = noWeapon;
-        currentWeaponBullets = 0;
+        if(currentWeaponBullets >= currentWeapon->getCapacity() && currentWeapon->getArmored())
+        {
+          teamArmory->setWeaponState(currentWeaponId, false);
+          teamArmory->getResources()[currentWeaponId]->unlock();
+          currentWeapon = noWeapon;
+          currentWeaponBullets = 0;
+        }
       }
 
       if(currentWeapon->getArmored() == false)
@@ -157,7 +159,13 @@ void Player::Play(std::mutex *weaponResource)
           currentWeapon = teamArmory->getWeapons()[(currentWeaponId + 1) % 3];
           currentWeaponId = currentWeapon->getId();
         }
-
+        else if(teamArmory->getResources()[(currentWeaponId + 2) % 3]->try_lock())
+        {
+          std::cout << id << " zmiana broni!" << std::endl;
+          teamArmory->setWeaponState(((currentWeaponId + 2) % 3), true);
+          currentWeapon = teamArmory->getWeapons()[(currentWeaponId + 2) % 3];
+          currentWeaponId = currentWeapon->getId();
+        }
         /*
         if(teamArmory->getWeaponState((currentWeaponId + 1) % 3) == false)
         {
