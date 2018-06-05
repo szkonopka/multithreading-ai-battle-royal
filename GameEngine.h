@@ -49,5 +49,5 @@ public:
   void ShootTickRate();
   void Refresh();
   void Redraw();
-  void Run();
+  void Run(int _teamSize);
 };

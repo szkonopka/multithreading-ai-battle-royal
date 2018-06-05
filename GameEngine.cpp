@@ -46,8 +46,10 @@ void GameEngine::Refresh()
   teamBBar->setCurrentProgress(teamBSumHP / teamBTotalHP);
 }
 
-void GameEngine::Run()
+void GameEngine::Run(int _teamSize)
 {
+  teamSize = _teamSize;
+
   Players::PlayerID = 0;
   color3 teamAColor = { 0.75f, 0.1f, 0.25f };
   color3 teamBColor = { 0.15f, 0.3f, 0.75f };
@@ -57,7 +59,7 @@ void GameEngine::Run()
 
   for(int i = 0; i < teamSize; i++)
   {
-    float yStep = ((-matrixWidth / 2) + (i * matrixWidth / 2));
+    float yStep = ((-matrixWidth / (teamSize - 1)) + (i * matrixWidth / (teamSize - 1)));
     teamA.push_back(new Player(-matrixWidth / 2, yStep, 100, 100, 0, teamAColor, teamAArmory));
     teamB.push_back(new Player(matrixWidth / 2, yStep, 100, 100, 0, teamBColor, teamBArmory));
   }
@@ -89,6 +91,9 @@ void GameEngine::Run()
 
   for(int i = 0; i < teamSize; i++)
   {
+    if(i == 3)
+      break;
+
     teamA[i]->InitWeapon(i);
     std::cout << "init weapon a id:" << teamA[i]->getCurrentWeapon()->getId() << std::endl;
     teamB[i]->InitWeapon(i);
@@ -120,7 +125,8 @@ void GameEngine::ShootTickRate()
 {
   while(true)
   {
-    if(!gameOn)
+    //if(!gameOn)
+    if(!*GameState::GameOnPtr)
       break;
 
     Players::IsShooting = true;
@@ -221,7 +227,7 @@ void GameEngine::CheckBulletsCollision()
 {
   while(true)
   {
-    if(!gameOn)
+    if(!*GameState::GameOnPtr)
       break;
     CheckTeamCollision(teamA, teamB);
     CheckTeamCollision(teamB, teamA);
