@@ -12,6 +12,15 @@ using namespace GameState;
 
 GameEngine ge(GameState::MatrixWidth);
 
+void checkKeyboardKey(unsigned char key, int x, int y)
+{
+  if(key == 27)
+  {
+    *GameState::GameOnPtr = false;
+    exit(0);
+  }
+}
+
 void resizeScreen(GLsizei horizontal, GLsizei vertical)
 {
     GLfloat aspectRatio;
@@ -59,16 +68,28 @@ void openGLThread(int argc, char *argv[])
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glutIdleFunc(requestAnimationFrame);
+  glutKeyboardFunc(checkKeyboardKey);
   glutDisplayFunc(renderScene); // set core displaying function
   glutReshapeFunc(resizeScreen); // set core window resizing function
   myInit(); // this function will be invoke before rendering, it clears window
   glutMainLoop(); // run main GLUT library core}
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
+  if(argc < 2)
+  {
+    std::cout << "Not enough arguments." << std::endl;
+    return 0;
+  }
+
   std::thread mainGL(&openGLThread, argc, argv);
-  std::thread gameEngine(&GameEngine::Run, &ge);
+
+  char *arg = argv[1];
+  int teamSize;
+  sscanf(argv[1], "%d", &teamSize);
+
+  std::thread gameEngine(&GameEngine::Run, &ge, teamSize);
   gameEngine.join();
   std::this_thread::sleep_for(std::chrono::seconds(1));
   mainGL.detach();

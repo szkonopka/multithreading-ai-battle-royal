@@ -58,6 +58,7 @@ void Player::initWaypoints()
   visitedWaypoints.clear();
 
   int waypointsAmount = std::rand() % 5 + 5;
+
   for(int i = 0; i < waypointsAmount; i++)
   {
     waypoints.push_back(std::make_pair(randomValue(gen) * GameState::MatrixWidth - GameState::MatrixWidth / 2, randomValue(gen) * GameState::MatrixWidth - GameState::MatrixWidth / 2));
@@ -106,6 +107,10 @@ void Player::Play(std::mutex *weaponResource)
     int currentWaypoint = 0;
 
     while(currentWaypoint < waypoints.size()) {
+
+      if(!isAlive || !*GameState::GameOnPtr)
+        break;
+
       if(waypoints[currentWaypoint].first > this->xPosition)
       {
         this->direction = (DIR) 0;
