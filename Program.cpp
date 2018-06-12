@@ -92,7 +92,7 @@ int main(int argc, char **argv)
   std::thread gameEngine(&GameEngine::Run, &ge, teamSize);
   gameEngine.join();
   std::this_thread::sleep_for(std::chrono::seconds(1));
-  mainGL.detach();
+  //mainGL.detach();
   glutDestroyWindow(GameState::WindowID);
   std::this_thread::sleep_for(std::chrono::seconds(1));
   mainGL.join();

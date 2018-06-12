@@ -1,0 +1,24 @@
+Projekt symulatora deathmatch.
+
+Wątki:
+ - każdy z graczy, odpalony wątek kontroluje jego ruch po mapie
+ - wątek sprawdzania zasięgu - sprawdza po kolei każdy zasięg gracza w zależności od broni i strzela jeżeli inny gracz znajdzie się w zasięgu
+ - wątek detekcji kolizji nabojów - naboje
+
+Zasoby:
+  - broń, którą wymieniając między sobą gracze
+  - gracze dla pocisków (należy odpowiednio synchronizować, by pocisk nie próbował usunąć czegoś czego już nie ma, albo próbował rysować coś czego nie ma)
+  - pocisk jest zasobem, trzeba synchronizować, ponieważ pocisk w przypadku detekcji jest usuwany - jeżeli jakimś cudem napotka dwóch graczy na linii
+    to musi się usunąć
+
+Synchronizacja broni - sekwencyjny dostęp, player nie może wziąć broni, którą miał wcześniej, bierze którą z kolejnych, wolnych, używamy try_locka i
+sprawdzamy czy udało się zająć mutex
+
+Gdy player zostanie zabity to zwalnia broń
+
+Sekcje krytyczna
+  - usuwanie broni
+  - zmiana broni
+  - strzal broni (żeby nie wystrzelił jeśli zostanie zabity)
+  - sprawdzanie kolizji pocisku
+  - otrzymanie obrazen od pocisu przez gracza

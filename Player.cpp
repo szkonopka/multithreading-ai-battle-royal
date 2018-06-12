@@ -85,7 +85,7 @@ void Player::Shoot(std::mutex &bulletResource, std::mutex &weaponResource, float
     if(currentWeaponBullets < currentWeapon->getCapacity())
     {
       currentWeaponBullets++;
-      std::cout << id << " wystrzelil: " << currentWeaponBullets << std::endl;
+      std::cout << id << " wystrzelil juz: " << currentWeaponBullets << " naboi" << std::endl;
       bulletResource.lock();
       Bullet *bullet = new Bullet(xPosition, yPosition, 80, 30, direction, destx, desty);
       firedBullets.push_back(*bullet);
@@ -185,6 +185,8 @@ void Player::Play(std::mutex *weaponResource)
       weaponResource->unlock();
     }
   }
+
+  std::cout << "Zamykam watek gracza " << getId() << std::endl;
 }
 
 void Player::Destroy()
